@@ -667,7 +667,7 @@ function CreateDocumentContent() {
               </p>
               <div className="flex flex-col gap-3">
                 <Link 
-                  href="/admin/settings"
+                  href="/admin/plans"
                   className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-center flex items-center justify-center gap-2"
                 >
                   <Sparkles size={18} /> Voir les plans Premium

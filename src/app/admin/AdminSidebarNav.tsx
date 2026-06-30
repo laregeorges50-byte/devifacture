@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, FileText, Users, Settings } from 'lucide-react'
+import { LayoutDashboard, FileText, Users, Settings, Sparkles } from 'lucide-react'
 
 export function AdminSidebarNav() {
   const pathname = usePathname()
@@ -11,6 +11,7 @@ export function AdminSidebarNav() {
     { href: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
     { href: '/admin/devis', label: 'Devis', icon: FileText },
     { href: '/admin/factures', label: 'Factures', icon: FileText },
+    { href: '/admin/plans', label: 'Abonnement', icon: Sparkles },
     { href: '/admin/settings', label: 'Paramètres', icon: Settings },
   ]
 

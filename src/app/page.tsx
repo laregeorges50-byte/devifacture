@@ -20,6 +20,8 @@ import {
   Check
 } from "lucide-react";
 
+import { createClient } from "@/utils/supabase/client";
+
 // Animations
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -38,6 +40,18 @@ const staggerContainer = {
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setIsLoggedIn(true);
+      }
+    };
+    checkUser();
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-gray-50 font-sans selection:bg-blue-600 selection:text-white overflow-x-hidden">
@@ -63,10 +77,18 @@ export default function LandingPage() {
           </nav>
 
           <div className="hidden md:flex items-center justify-end gap-6 w-48">
-            <Link href="/login" className="text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Connexion</Link>
-            <Link href="/signup" className="bg-gray-900 text-white hover:bg-gray-800 transition-all px-6 py-2.5 rounded-xl text-base font-medium shadow-sm hover:shadow-md">
-              Créer un compte
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/admin" className="bg-gray-900 text-white hover:bg-gray-800 transition-all px-6 py-2.5 rounded-xl text-base font-medium shadow-sm hover:shadow-md">
+                Mon Espace
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Connexion</Link>
+                <Link href="/signup" className="bg-gray-900 text-white hover:bg-gray-800 transition-all px-6 py-2.5 rounded-xl text-base font-medium shadow-sm hover:shadow-md">
+                  Créer un compte
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Toggle */}
@@ -89,8 +111,14 @@ export default function LandingPage() {
               <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 text-lg font-medium p-3 rounded-xl hover:bg-gray-50 mx-auto w-full max-w-sm">Comment ça marche</a>
               <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 text-lg font-medium p-3 rounded-xl hover:bg-gray-50 mx-auto w-full max-w-sm">Tarifs</a>
               <div className="h-px bg-gray-100 my-2 max-w-sm mx-auto w-full"></div>
-              <Link href="/login" className="block font-medium text-lg text-gray-700 p-3 hover:bg-gray-50 rounded-xl mx-auto w-full max-w-sm text-center">Connexion</Link>
-              <Link href="/signup" className="block bg-blue-600 text-white rounded-xl p-4 text-lg font-medium mx-auto w-full max-w-sm shadow-md text-center">Créer un compte</Link>
+              {isLoggedIn ? (
+                <Link href="/admin" className="block bg-blue-600 text-white rounded-xl p-4 text-lg font-medium mx-auto w-full max-w-sm shadow-md text-center">Accéder à mon espace</Link>
+              ) : (
+                <>
+                  <Link href="/login" className="block font-medium text-lg text-gray-700 p-3 hover:bg-gray-50 rounded-xl mx-auto w-full max-w-sm text-center">Connexion</Link>
+                  <Link href="/signup" className="block bg-blue-600 text-white rounded-xl p-4 text-lg font-medium mx-auto w-full max-w-sm shadow-md text-center">Créer un compte</Link>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -115,8 +143,8 @@ export default function LandingPage() {
             </motion.p>
             
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full sm:w-auto">
-              <Link href="/signup" className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 transition-all px-8 py-4 rounded-2xl text-lg font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5">
-                Commencer maintenant
+              <Link href={isLoggedIn ? "/admin" : "/signup"} className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 transition-all px-8 py-4 rounded-2xl text-lg font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5">
+                {isLoggedIn ? "Accéder à mon espace" : "Commencer maintenant"}
                 <ArrowRight size={20} />
               </Link>
               <button className="w-full sm:w-auto bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 transition-all px-8 py-4 rounded-2xl text-lg font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5">
@@ -462,8 +490,8 @@ export default function LandingPage() {
               <div className="mb-6">
                 <span className="text-4xl font-black text-gray-900">0 F</span>
               </div>
-              <Link href="/signup" className="w-full inline-block py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-900 font-bold hover:bg-gray-100 transition-colors mb-8 text-sm shadow-sm text-center">
-                Commencer gratuitement
+              <Link href={isLoggedIn ? "/admin/plans" : "/signup"} className="w-full inline-block py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-900 font-bold hover:bg-gray-100 transition-colors mb-8 text-sm shadow-sm text-center">
+                {isLoggedIn ? "Gérer mon abonnement" : "Commencer gratuitement"}
               </Link>
               <ul className="space-y-4 text-sm text-gray-600 flex-1 w-full">
                 <li className="flex items-center justify-center gap-2"><CheckCircle2 size={18} className="text-green-500 shrink-0" /> 2 devis + 2 factures</li>
@@ -479,7 +507,7 @@ export default function LandingPage() {
               <div className="mb-6">
                 <span className="text-4xl font-black text-gray-900">2 000 F</span>
               </div>
-              <Link href="/signup" className="w-full inline-block py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-900 font-bold hover:bg-gray-100 transition-colors mb-8 text-sm shadow-sm text-center">
+              <Link href={isLoggedIn ? "/admin/plans" : "/signup"} className="w-full inline-block py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-900 font-bold hover:bg-gray-100 transition-colors mb-8 text-sm shadow-sm text-center">
                 Passer au Starter
               </Link>
               <ul className="space-y-4 text-sm text-gray-600 flex-1 w-full">
@@ -499,7 +527,7 @@ export default function LandingPage() {
               <div className="mb-6">
                 <span className="text-4xl font-black text-white">5 000 F</span>
               </div>
-              <Link href="/signup" className="w-full inline-block py-3 px-4 rounded-xl bg-white text-blue-600 font-bold hover:bg-gray-50 transition-colors mb-8 text-sm shadow-md hover:-translate-y-0.5 text-center">
+              <Link href={isLoggedIn ? "/admin/plans" : "/signup"} className="w-full inline-block py-3 px-4 rounded-xl bg-white text-blue-600 font-bold hover:bg-gray-50 transition-colors mb-8 text-sm shadow-md hover:-translate-y-0.5 text-center">
                 Passer au Pro
               </Link>
               <ul className="space-y-4 text-sm text-blue-50 flex-1 w-full">
@@ -516,7 +544,7 @@ export default function LandingPage() {
               <div className="mb-6">
                 <span className="text-4xl font-black text-gray-900">10 000 F</span>
               </div>
-              <Link href="/signup" className="w-full inline-block py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-900 font-bold hover:bg-gray-100 transition-colors mb-8 text-sm shadow-sm text-center">
+              <Link href={isLoggedIn ? "/admin/plans" : "/signup"} className="w-full inline-block py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-900 font-bold hover:bg-gray-100 transition-colors mb-8 text-sm shadow-sm text-center">
                 Choisir ce plan
               </Link>
               <ul className="space-y-4 text-sm text-gray-600 flex-1 w-full">
@@ -540,8 +568,8 @@ export default function LandingPage() {
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 leading-tight text-balance">Prêt à simplifier vos devis et factures ?</h2>
               <p className="text-blue-100 text-lg md:text-xl mb-4 text-balance">Rejoignez les entrepreneurs africains qui gagnent du temps chaque jour.</p>
               
-              <Link href="/signup" className="w-full sm:w-auto inline-flex bg-white text-blue-600 hover:bg-gray-50 px-10 py-5 rounded-2xl text-xl font-bold shadow-lg items-center justify-center gap-3 transition-transform hover:-translate-y-1">
-                Créer un compte gratuit
+              <Link href={isLoggedIn ? "/admin" : "/signup"} className="w-full sm:w-auto inline-flex bg-white text-blue-600 hover:bg-gray-50 px-10 py-5 rounded-2xl text-xl font-bold shadow-lg items-center justify-center gap-3 transition-transform hover:-translate-y-1">
+                {isLoggedIn ? "Aller au tableau de bord" : "Créer un compte gratuit"}
                 <ArrowRight size={24} />
               </Link>
             </div>
