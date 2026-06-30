@@ -32,7 +32,17 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
           @page { margin: 0; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          html, body {
+            overflow: visible !important;
+            height: auto !important;
+          }
+          body { 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+          }
+          ::-webkit-scrollbar {
+            display: none !important;
+          }
         }
       `}} />
       {/* NO PRINT AREA: This section will be hidden when printing */}
@@ -112,7 +122,7 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
         </div>
 
         {/* Spreadsheet-like Table */}
-        <div className="w-full overflow-x-auto mb-8 print:mb-4 border border-gray-200">
+        <div className="w-full overflow-x-auto print:overflow-visible mb-8 print:mb-4 border border-gray-200">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 text-xs uppercase tracking-wider font-bold border-b border-gray-200 text-gray-700">
@@ -170,10 +180,10 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
         </div>
 
         {/* BOTTOM AREA (Dates, Totals, Signatures) */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-12 mt-12 print:mt-6 print:gap-8 print:break-inside-avoid">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-12 mt-12 print:mt-6 print:block">
           
           {/* Left Side: Dates */}
-          <div className="w-full md:w-1/2 flex flex-col justify-end gap-12">
+          <div className="w-full md:w-1/2 print:float-left print:w-1/2 flex flex-col justify-start gap-12 print:pt-2">
             <div className="flex items-center gap-2 border border-gray-200 p-2 w-max rounded-md">
               <span className="text-gray-500 text-sm font-bold ml-1">Date :</span>
               <span className="font-medium text-gray-900 px-2">
@@ -183,7 +193,7 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
           </div>
 
           {/* Right Side: Totals & Signature */}
-          <div className="w-full md:w-1/2 flex flex-col items-end">
+          <div className="w-full md:w-1/2 print:float-right print:w-1/2 flex flex-col items-end print:break-inside-avoid">
             
             {/* Totals Table */}
             <div className="w-full max-w-xs border border-gray-200 mb-8">
@@ -214,6 +224,7 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
             </div>
 
           </div>
+          <div className="clear-both hidden print:block"></div>
         </div>
 
       </div>
