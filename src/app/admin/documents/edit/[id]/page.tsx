@@ -64,6 +64,11 @@ function EditDocumentContent({ documentId }: { documentId: string }) {
   const [numero, setNumero] = useState('')
   const [tvaRate, setTvaRate] = useState(18)
   
+  // Auto-save logic
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
+  
   // Dates
   const [dateCreation, setDateCreation] = useState(new Date().toISOString().split('T')[0])
   const [dateValidity, setDateValidity] = useState('')
@@ -123,6 +128,8 @@ function EditDocumentContent({ documentId }: { documentId: string }) {
               }))
           )
         }
+        
+        setTimeout(() => setIsLoaded(true), 100)
       }
     }
     loadData()
@@ -223,6 +230,105 @@ function EditDocumentContent({ documentId }: { documentId: string }) {
   const sousTotal = lines.reduce((acc, line) => acc + getLineTotal(line), 0)
   const tva = sousTotal * (tvaRate / 100)
   const totalTTC = sousTotal + tva
+
+  const stateRef = useRef({
+    type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity,
+    companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle,
+    clientName, clientEmail, clientPhone, clientAddress,
+    lines, documentId
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity,
+      companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle,
+      clientName, clientEmail, clientPhone, clientAddress,
+      lines, documentId
+    };
+  }, [type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity, companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle, clientName, clientEmail, clientPhone, clientAddress, lines, documentId]);
+
+  useEffect(() => {
+    if (!isLoaded || isSaving) return;
+
+    const performAutoSave = async () => {
+      setIsAutoSaving(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error("Non connecté")
+        
+        const current = stateRef.current;
+
+        const { data: doc } = await supabase.from('documents').select('client_id').eq('id', current.documentId).single()
+        
+        if (doc?.client_id) {
+          await supabase.from('clients').update({
+            nom: current.clientName || 'Nouveau client',
+            email: current.clientEmail || null,
+            telephone: current.clientPhone || null,
+            adresse: current.clientAddress || null
+          }).eq('id', doc.client_id)
+        }
+
+        await supabase.from('documents').update({
+          type: current.type,
+          numero: current.numero,
+          sous_total: current.sousTotal,
+          tva: current.tva,
+          total: current.totalTTC,
+          date_creation: current.dateCreation,
+          date_echeance: current.dateValidity || null,
+          company_metadata: {
+            name: current.companyName,
+            address: current.companyAddress,
+            phone: current.companyPhone,
+            email: current.companyEmail,
+            rccm: current.companyRccm,
+            nif: current.companyNif,
+            siret: null,
+            logo: current.companyLogo,
+            signature: current.companySignature,
+            stamp: current.companyStamp,
+            document_title: current.documentTitle
+          }
+        }).eq('id', current.documentId)
+
+        await supabase.from('document_lines').delete().eq('document_id', current.documentId)
+
+        const linesToInsert = current.lines.filter((l: any) => l.description.trim() !== '').map((l: any, index: number) => ({
+          document_id: current.documentId,
+          description: l.description,
+          quantite: l.is_title ? 0 : evaluateFormula(l.quantite),
+          prix_unitaire: l.is_title ? 0 : evaluateFormula(l.prix_unitaire),
+          unite: current.type === 'devis' && !l.is_title ? l.unite : '',
+          is_title: l.is_title,
+          total: l.is_title ? 0 : (evaluateFormula(l.quantite) * evaluateFormula(l.prix_unitaire)),
+          position: index
+        }))
+
+        if (linesToInsert.length > 0) {
+          await supabase.from('document_lines').insert(linesToInsert)
+        }
+
+        const now = new Date();
+        setLastSavedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
+      } catch (error) {
+        console.error('Erreur auto-save:', error)
+      } finally {
+        setIsAutoSaving(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      performAutoSave();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [
+    type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity, 
+    companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle, 
+    clientName, clientEmail, clientPhone, clientAddress, 
+    JSON.stringify(lines), isLoaded
+  ]);
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -331,14 +437,21 @@ function EditDocumentContent({ documentId }: { documentId: string }) {
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
-          <button 
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`flex items-center gap-2 px-5 py-2 text-white rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 ${btnClass}`}
-          >
-            <Save size={16} />
-            {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-          </button>
+          <div className="flex items-center gap-2">
+            {(isAutoSaving || lastSavedTime) && (
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap hidden sm:inline-block">
+                {isAutoSaving ? 'Enregistrement...' : `Brouillon enregistré à ${lastSavedTime}`}
+              </span>
+            )}
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`flex items-center gap-2 px-5 py-2 text-white rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 ${btnClass}`}
+            >
+              <Save size={16} />
+              {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            </button>
+          </div>
         </div>
       </div>
 

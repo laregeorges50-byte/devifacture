@@ -66,6 +66,12 @@ function CreateDocumentContent() {
   const [numero, setNumero] = useState('')
   const [tvaRate, setTvaRate] = useState(18)
   
+  // Auto-save logic
+  const [autoSavedDocId, setAutoSavedDocId] = useState<string | null>(null)
+  const [autoSavedClientId, setAutoSavedClientId] = useState<string | null>(null)
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
+  
   // Dates
   const [dateCreation, setDateCreation] = useState(new Date().toISOString().split('T')[0])
   const [dateValidity, setDateValidity] = useState('')
@@ -208,85 +214,306 @@ function CreateDocumentContent() {
   const tva = sousTotal * (tvaRate / 100)
   const totalTTC = sousTotal + tva
 
+  const stateRef = useRef({
+    type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity,
+    companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle,
+    clientName, clientEmail, clientPhone, clientAddress,
+    lines, autoSavedDocId, autoSavedClientId
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity,
+      companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle,
+      clientName, clientEmail, clientPhone, clientAddress,
+      lines, autoSavedDocId, autoSavedClientId
+    };
+  }, [type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity, companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle, clientName, clientEmail, clientPhone, clientAddress, lines, autoSavedDocId, autoSavedClientId]);
+
+  useEffect(() => {
+    const hasContent = clientName.trim() !== '' || lines.some(l => l.description.trim() !== '') || documentTitle.trim() !== '';
+    if (!hasContent || showLimitModal || isSaving) return;
+
+    const performAutoSave = async () => {
+      setIsAutoSaving(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error("Non connecté")
+        
+        const current = stateRef.current;
+
+        // Limit checking
+        if (!current.autoSavedDocId) {
+          const limit = user.user_metadata?.document_limit !== undefined ? parseInt(user.user_metadata.document_limit) : 4
+          const historicalCount = user.user_metadata?.created_docs_count !== undefined ? parseInt(user.user_metadata.created_docs_count) : 0
+          const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+          
+          const totalUsed = Math.max(historicalCount, count || 0)
+
+          if (totalUsed >= limit) {
+            setUserLimit(limit)
+            setShowLimitModal(true)
+            setIsAutoSaving(false)
+            return
+          }
+        }
+
+        let clientId = current.autoSavedClientId;
+        if (!clientId) {
+          const { data: client, error: clientError } = await supabase.from('clients').insert({
+            user_id: user.id,
+            nom: current.clientName || 'Nouveau client',
+            email: current.clientEmail || null,
+            telephone: current.clientPhone || null,
+            adresse: current.clientAddress || null
+          }).select().single()
+          if (clientError) throw clientError
+          clientId = client.id;
+          setAutoSavedClientId(client.id);
+        } else {
+          await supabase.from('clients').update({
+            nom: current.clientName || 'Nouveau client',
+            email: current.clientEmail || null,
+            telephone: current.clientPhone || null,
+            adresse: current.clientAddress || null
+          }).eq('id', clientId)
+        }
+
+        let docId = current.autoSavedDocId;
+        if (!docId) {
+          const { data: doc, error: docError } = await supabase.from('documents').insert({
+            user_id: user.id,
+            client_id: clientId,
+            type: current.type,
+            numero: current.numero,
+            sous_total: current.sousTotal,
+            tva: current.tva,
+            total: current.totalTTC,
+            statut: 'brouillon',
+            date_creation: current.dateCreation,
+            date_echeance: current.dateValidity || null,
+            company_metadata: {
+              name: current.companyName,
+              address: current.companyAddress,
+              phone: current.companyPhone,
+              email: current.companyEmail,
+              rccm: current.companyRccm,
+              nif: current.companyNif,
+              siret: null,
+              logo: current.companyLogo,
+              signature: current.companySignature,
+              stamp: current.companyStamp,
+              document_title: current.documentTitle
+            }
+          }).select().single()
+          if (docError) throw docError
+          docId = doc.id;
+          setAutoSavedDocId(doc.id);
+
+          const historicalCount = user.user_metadata?.created_docs_count !== undefined ? parseInt(user.user_metadata.created_docs_count) : 0
+          const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+          const totalUsed = Math.max(historicalCount, count || 0)
+          await supabase.auth.updateUser({
+            data: { created_docs_count: totalUsed + 1 }
+          })
+        } else {
+          await supabase.from('documents').update({
+            type: current.type,
+            numero: current.numero,
+            sous_total: current.sousTotal,
+            tva: current.tva,
+            total: current.totalTTC,
+            date_creation: current.dateCreation,
+            date_echeance: current.dateValidity || null,
+            company_metadata: {
+              name: current.companyName,
+              address: current.companyAddress,
+              phone: current.companyPhone,
+              email: current.companyEmail,
+              rccm: current.companyRccm,
+              nif: current.companyNif,
+              siret: null,
+              logo: current.companyLogo,
+              signature: current.companySignature,
+              stamp: current.companyStamp,
+              document_title: current.documentTitle
+            }
+          }).eq('id', docId)
+        }
+
+        if (current.autoSavedDocId) {
+          await supabase.from('document_lines').delete().eq('document_id', docId)
+        }
+
+        const linesToInsert = current.lines.filter((l: any) => l.description.trim() !== '').map((l: any, index: number) => ({
+          document_id: docId,
+          description: l.description,
+          quantite: l.is_title ? 0 : evaluateFormula(l.quantite),
+          prix_unitaire: l.is_title ? 0 : evaluateFormula(l.prix_unitaire),
+          unite: current.type === 'devis' && !l.is_title ? l.unite : '',
+          is_title: l.is_title,
+          total: l.is_title ? 0 : (evaluateFormula(l.quantite) * evaluateFormula(l.prix_unitaire)),
+          position: index
+        }))
+
+        if (linesToInsert.length > 0) {
+          await supabase.from('document_lines').insert(linesToInsert)
+        }
+
+        const now = new Date();
+        setLastSavedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
+      } catch (error) {
+        console.error('Erreur auto-save:', error)
+      } finally {
+        setIsAutoSaving(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      performAutoSave();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [
+    type, numero, sousTotal, tva, totalTTC, dateCreation, dateValidity, 
+    companyName, companyAddress, companyPhone, companyEmail, companyRccm, companyNif, companyLogo, companySignature, companyStamp, documentTitle, 
+    clientName, clientEmail, clientPhone, clientAddress, 
+    JSON.stringify(lines)
+  ]);
+
   const handleSave = async () => {
     setIsSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Non connecté")
 
-      const limit = user.user_metadata?.document_limit !== undefined ? parseInt(user.user_metadata.document_limit) : 4
-      const historicalCount = user.user_metadata?.created_docs_count !== undefined ? parseInt(user.user_metadata.created_docs_count) : 0
-      const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
-      
-      const totalUsed = Math.max(historicalCount, count || 0)
+      let docId = autoSavedDocId;
 
-      if (totalUsed >= limit) {
-        setUserLimit(limit)
-        setShowLimitModal(true)
-        setIsSaving(false)
-        return
-      }
+      if (!docId) {
+        // Document has not been auto-saved yet, full creation logic
+        const limit = user.user_metadata?.document_limit !== undefined ? parseInt(user.user_metadata.document_limit) : 4
+        const historicalCount = user.user_metadata?.created_docs_count !== undefined ? parseInt(user.user_metadata.created_docs_count) : 0
+        const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+        
+        const totalUsed = Math.max(historicalCount, count || 0)
 
-      const { data: client, error: clientError } = await supabase.from('clients').insert({
-        user_id: user.id,
-        nom: clientName || '',
-        email: clientEmail || null,
-        telephone: clientPhone || null,
-        adresse: clientAddress || null
-      }).select().single()
-
-      if (clientError) throw clientError
-
-      const { data: doc, error: docError } = await supabase.from('documents').insert({
-        user_id: user.id,
-        client_id: client.id,
-        type,
-        numero,
-        sous_total: sousTotal,
-        tva,
-        total: totalTTC,
-        statut: 'brouillon',
-        date_creation: dateCreation,
-        date_echeance: dateValidity || null,
-        company_metadata: {
-          name: companyName,
-          address: companyAddress,
-          phone: companyPhone,
-          email: companyEmail,
-          rccm: companyRccm,
-          nif: companyNif,
-          siret: null, // cleared
-          logo: companyLogo,
-          signature: companySignature,
-          stamp: companyStamp,
-          document_title: documentTitle
+        if (totalUsed >= limit) {
+          setUserLimit(limit)
+          setShowLimitModal(true)
+          setIsSaving(false)
+          return
         }
-      }).select().single()
 
-      if (docError) throw docError
+        const { data: client, error: clientError } = await supabase.from('clients').insert({
+          user_id: user.id,
+          nom: clientName || 'Nouveau client',
+          email: clientEmail || null,
+          telephone: clientPhone || null,
+          adresse: clientAddress || null
+        }).select().single()
 
-      const linesToInsert = lines.filter(l => l.description.trim() !== '').map((l, index) => ({
-        document_id: doc.id,
-        description: l.description,
-        quantite: l.is_title ? 0 : evaluateFormula(l.quantite),
-        prix_unitaire: l.is_title ? 0 : evaluateFormula(l.prix_unitaire),
-        unite: type === 'devis' && !l.is_title ? l.unite : '',
-        is_title: l.is_title,
-        total: getLineTotal(l),
-        position: index
-      }))
+        if (clientError) throw clientError
 
-      if (linesToInsert.length > 0) {
-        const { error: linesError } = await supabase.from('document_lines').insert(linesToInsert)
-        if (linesError) throw linesError
+        const { data: doc, error: docError } = await supabase.from('documents').insert({
+          user_id: user.id,
+          client_id: client.id,
+          type,
+          numero,
+          sous_total: sousTotal,
+          tva,
+          total: totalTTC,
+          statut: 'brouillon',
+          date_creation: dateCreation,
+          date_echeance: dateValidity || null,
+          company_metadata: {
+            name: companyName,
+            address: companyAddress,
+            phone: companyPhone,
+            email: companyEmail,
+            rccm: companyRccm,
+            nif: companyNif,
+            siret: null,
+            logo: companyLogo,
+            signature: companySignature,
+            stamp: companyStamp,
+            document_title: documentTitle
+          }
+        }).select().single()
+
+        if (docError) throw docError
+        docId = doc.id;
+
+        const linesToInsert = lines.filter(l => l.description.trim() !== '').map((l, index) => ({
+          document_id: doc.id,
+          description: l.description,
+          quantite: l.is_title ? 0 : evaluateFormula(l.quantite),
+          prix_unitaire: l.is_title ? 0 : evaluateFormula(l.prix_unitaire),
+          unite: type === 'devis' && !l.is_title ? l.unite : '',
+          is_title: l.is_title,
+          total: getLineTotal(l),
+          position: index
+        }))
+
+        if (linesToInsert.length > 0) {
+          await supabase.from('document_lines').insert(linesToInsert)
+        }
+
+        // Mettre à jour le compteur
+        await supabase.auth.updateUser({
+          data: { created_docs_count: totalUsed + 1 }
+        })
+
+      } else {
+        // Document already auto-saved, just do one final update
+        await supabase.from('clients').update({
+          nom: clientName || 'Nouveau client',
+          email: clientEmail || null,
+          telephone: clientPhone || null,
+          adresse: clientAddress || null
+        }).eq('id', autoSavedClientId)
+
+        await supabase.from('documents').update({
+          type,
+          numero,
+          sous_total: sousTotal,
+          tva,
+          total: totalTTC,
+          date_creation: dateCreation,
+          date_echeance: dateValidity || null,
+          company_metadata: {
+            name: companyName,
+            address: companyAddress,
+            phone: companyPhone,
+            email: companyEmail,
+            rccm: companyRccm,
+            nif: companyNif,
+            siret: null,
+            logo: companyLogo,
+            signature: companySignature,
+            stamp: companyStamp,
+            document_title: documentTitle
+          }
+        }).eq('id', docId)
+
+        await supabase.from('document_lines').delete().eq('document_id', docId)
+
+        const linesToInsert = lines.filter(l => l.description.trim() !== '').map((l, index) => ({
+          document_id: docId,
+          description: l.description,
+          quantite: l.is_title ? 0 : evaluateFormula(l.quantite),
+          prix_unitaire: l.is_title ? 0 : evaluateFormula(l.prix_unitaire),
+          unite: type === 'devis' && !l.is_title ? l.unite : '',
+          is_title: l.is_title,
+          total: getLineTotal(l),
+          position: index
+        }))
+
+        if (linesToInsert.length > 0) {
+          await supabase.from('document_lines').insert(linesToInsert)
+        }
       }
 
-      // Mettre à jour le compteur historique de documents créés
-      await supabase.auth.updateUser({
-        data: { created_docs_count: totalUsed + 1 }
-      })
-
-      router.push(`/admin/documents/${doc.id}`)
+      router.push(`/admin/documents/${docId}`)
       router.refresh()
     } catch (error) {
       console.error('Erreur de sauvegarde:', error)
@@ -335,14 +562,21 @@ function CreateDocumentContent() {
           <Link href="/admin/settings" className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm">
             Modifier l'entreprise
           </Link>
-          <button 
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`flex items-center gap-2 px-5 py-2 text-white rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 ${btnClass}`}
-          >
-            <Save size={16} />
-            {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
-          </button>
+          <div className="flex items-center gap-2">
+            {(isAutoSaving || lastSavedTime) && (
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap hidden sm:inline-block">
+                {isAutoSaving ? 'Enregistrement...' : `Brouillon enregistré à ${lastSavedTime}`}
+              </span>
+            )}
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`flex items-center gap-2 px-5 py-2 text-white rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 ${btnClass}`}
+            >
+              <Save size={16} />
+              {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </button>
+          </div>
         </div>
       </div>
 
