@@ -7,8 +7,8 @@ export async function updateSession(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    'https://ckbrqdehfhxjizuecstl.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrYnJxZGVoZmh4aml6dWVjc3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzU4MDgsImV4cCI6MjA5NzExMTgwOH0.vcupOQ6j2ShjtpphePQqI1E43dNFd8eQ3pj23aaOpWo',
     {
       cookies: {
         getAll() {
