@@ -11,7 +11,6 @@ export function AdminSidebarNav() {
     { href: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
     { href: '/admin/devis', label: 'Devis', icon: FileText },
     { href: '/admin/factures', label: 'Factures', icon: FileText },
-    { href: '/admin/plans', label: 'Abonnement', icon: Sparkles },
     { href: '/admin/settings', label: 'Paramètres', icon: Settings },
   ]
 
