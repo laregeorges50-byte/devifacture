@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useCallback, useEffect, Suspense } from 'react'
-import { Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, Sparkles, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Save, ArrowLeft, Image as ImageIcon, Sparkles, AlertCircle, GripVertical, PlusCircle } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -80,6 +80,41 @@ function CreateDocumentContent() {
     { id: crypto.randomUUID(), description: '', quantite: 1, prix_unitaire: '', unite: '', is_title: false }
   ])
 
+  // Drag & Drop
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent<HTMLTableRowElement>, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', ''); 
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLTableRowElement>, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTableRowElement>, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && targetIndex !== null && draggedIndex !== targetIndex) {
+      setLines(prev => {
+        const newLines = [...prev];
+        const draggedItem = newLines[draggedIndex];
+        newLines.splice(draggedIndex, 1);
+        newLines.splice(targetIndex, 0, draggedItem);
+        return newLines;
+      });
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   const tableRef = useRef<HTMLTableElement>(null)
 
   useEffect(() => {
@@ -125,6 +160,22 @@ function CreateDocumentContent() {
   const addTitleLine = useCallback(() => {
     setLines(prev => [...prev, { id: crypto.randomUUID(), description: '', quantite: '', prix_unitaire: '', unite: '', is_title: true }])
   }, [])
+
+  const insertLineBelow = (index: number) => {
+    const newLine = {
+      id: crypto.randomUUID(),
+      description: '',
+      quantite: '1',
+      prix_unitaire: '0',
+      unite: '',
+      is_title: false
+    }
+    setLines(prev => {
+      const newLines = [...prev];
+      newLines.splice(index + 1, 0, newLine);
+      return newLines;
+    });
+  }
 
   const removeLine = (id: string) => {
     if (lines.length > 1) {
@@ -716,11 +767,27 @@ function CreateDocumentContent() {
             <tbody>
               {lines.map((line, index) => (
                 <tr 
-                  key={line.id} 
-                  className={`border-b border-gray-100 group hover:bg-slate-50 transition-colors ${line.is_title ? 'bg-slate-50/50' : ''}`}
+                  key={line.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`border-b border-gray-100 group transition-all duration-200 
+                    ${line.is_title ? 'bg-slate-50/50' : 'hover:bg-slate-50'}
+                    ${draggedIndex === index ? 'opacity-40 scale-[0.99] bg-blue-50/50 shadow-inner' : ''}
+                    ${dragOverIndex === index && draggedIndex !== index ? (draggedIndex! > index ? 'border-t-2 border-t-blue-500' : 'border-b-2 border-b-blue-500') : ''}
+                  `}
                 >
-                  <td className="px-4 py-3 text-center text-gray-400 font-medium text-sm">
-                    {index + 1}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 justify-center">
+                      <div className="cursor-grab hover:text-blue-500 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity p-1 active:cursor-grabbing" title="Déplacer la ligne">
+                        <GripVertical size={16} />
+                      </div>
+                      <span className="text-gray-400 font-medium text-sm w-4 text-center">
+                        {index + 1}
+                      </span>
+                    </div>
                   </td>
                   
                   {line.is_title ? (
@@ -788,12 +855,22 @@ function CreateDocumentContent() {
                   )}
 
                   <td className="px-2 py-3 text-center">
-                    <button 
-                      onClick={() => removeLine(line.id)}
-                      className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => insertLineBelow(index)}
+                        title="Insérer une ligne en dessous"
+                        className="text-gray-300 hover:text-blue-500 transition-colors p-1"
+                      >
+                        <PlusCircle size={16} />
+                      </button>
+                      <button 
+                        onClick={() => removeLine(line.id)}
+                        title="Supprimer la ligne"
+                        className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
