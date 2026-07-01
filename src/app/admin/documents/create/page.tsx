@@ -781,7 +781,7 @@ function CreateDocumentContent() {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-center">
-                      <div className="cursor-grab hover:text-blue-500 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity p-1 active:cursor-grabbing" title="Déplacer la ligne">
+                      <div className="cursor-grab hover:text-blue-500 text-gray-400 opacity-100 md:opacity-20 md:group-hover:opacity-100 transition-opacity p-1 active:cursor-grabbing" title="Déplacer la ligne">
                         <GripVertical size={16} />
                       </div>
                       <span className="text-gray-400 font-medium text-sm w-4 text-center">
@@ -855,18 +855,18 @@ function CreateDocumentContent() {
                   )}
 
                   <td className="px-2 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-center gap-2 opacity-100 md:opacity-30 md:group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => insertLineBelow(index)}
                         title="Insérer une ligne en dessous"
-                        className="text-gray-300 hover:text-blue-500 transition-colors p-1"
+                        className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors p-1.5"
                       >
                         <PlusCircle size={16} />
                       </button>
                       <button 
                         onClick={() => removeLine(line.id)}
                         title="Supprimer la ligne"
-                        className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                        className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors p-1.5"
                       >
                         <Trash2 size={16} />
                       </button>
