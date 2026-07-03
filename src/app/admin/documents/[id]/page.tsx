@@ -193,10 +193,10 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
           </div>
 
           {/* Right Side: Totals & Signature */}
-          <div className="w-full md:w-1/2 print:float-right print:w-1/2 flex flex-col items-end print:break-inside-avoid">
+          <div className="w-full md:w-1/2 print:float-right print:w-1/2 flex flex-col items-end print:block">
             
             {/* Totals Table */}
-            <div className="w-full max-w-xs border border-gray-200 mb-8">
+            <div className="w-full max-w-xs border border-gray-200 mb-8 print:ml-auto print:break-inside-avoid">
               <div className="flex border-b border-gray-200">
                 <div className="w-1/2 p-2 border-r border-gray-200 bg-gray-50 font-bold text-sm">TOTAL HT</div>
                 <div className="w-1/2 p-2 text-right tabular-nums text-sm font-medium">{doc.sous_total?.toLocaleString('fr-FR')}</div>
@@ -212,7 +212,7 @@ export default async function DocumentViewerPage({ params }: { params: Promise<{
             </div>
 
             {/* Signature Area */}
-            <div className="w-full max-w-sm mt-8 flex flex-col items-center">
+            <div className="w-full max-w-sm mt-8 flex flex-col items-center print:ml-auto print:break-inside-avoid">
               <div className="text-gray-900 font-bold text-sm mb-6">{isDevis ? 'Signature' : 'Signature ou Cachet'}</div>
               <div className="flex items-center gap-6">
                 {company.signature && <img src={company.signature} alt="Signature" className="max-h-28 max-w-[200px] object-contain" />}
