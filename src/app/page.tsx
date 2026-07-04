@@ -147,10 +147,10 @@ export default function LandingPage() {
                 {isLoggedIn ? "Accéder à mon espace" : "Commencer maintenant"}
                 <ArrowRight size={20} />
               </Link>
-              <button className="w-full sm:w-auto bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 transition-all px-8 py-4 rounded-2xl text-lg font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                <PlayCircle size={20} className="text-gray-500" />
+              <Link href="/comment-ca-marche" className="w-full sm:w-auto bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 transition-all px-8 py-4 rounded-2xl text-lg font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                <PlayCircle size={20} />
                 Voir comment ça marche
-              </button>
+              </Link>
             </motion.div>
           </motion.div>
 
