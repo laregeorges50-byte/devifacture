@@ -8,10 +8,10 @@ export function AdminSidebarNav() {
   const pathname = usePathname()
 
   const navItems = [
-    { href: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
+    { href: '/admin', label: 'Tableau de bord', icon: LayoutDashboard, id: 'tour-dashboard' },
     { href: '/admin/devis', label: 'Devis', icon: FileText },
     { href: '/admin/factures', label: 'Factures', icon: FileText },
-    { href: '/admin/settings', label: 'Paramètres', icon: Settings },
+    { href: '/admin/settings', label: 'Paramètres', icon: Settings, id: 'tour-settings' },
   ]
 
   return (
@@ -28,6 +28,7 @@ export function AdminSidebarNav() {
           <Link 
             key={item.href}
             href={item.href} 
+            id={item.id}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
               isActive 
                 ? 'bg-blue-50 text-blue-700' 

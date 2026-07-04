@@ -6,6 +6,7 @@ import { logout } from '@/app/login/actions'
 import { AdminSidebarNav } from './AdminSidebarNav'
 import { SupportBubble } from './SupportBubble'
 import { MobileNav } from './MobileNav'
+import { GuidedTour } from '@/components/GuidedTour'
 
 export default async function AdminLayout({
   children,
@@ -57,11 +58,14 @@ export default async function AdminLayout({
             <MobileNav displayName={displayName} />
             <h1 className="text-xl font-bold text-gray-900 truncate">Administration</h1>
           </div>
-          <Link href="/admin/documents/create" className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
+          <Link href="/admin/documents/create" id="tour-new-doc" className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
             <span className="hidden sm:inline">+ Nouveau Document</span>
             <span className="sm:hidden">+ Nouveau</span>
           </Link>
         </header>
+        
+        <GuidedTour />
+
         <div className="flex-1 p-6 md:p-8 print:p-0">
           {children}
         </div>
