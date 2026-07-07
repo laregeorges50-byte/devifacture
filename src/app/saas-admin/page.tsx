@@ -15,6 +15,15 @@ type AdminStats = {
   total_visits: number
 }
 
+type AdminPayment = {
+  id: string
+  amount: number
+  plan: string
+  status: string
+  created_at: string
+  email: string
+}
+
 type AdminUser = {
   id: string
   email: string
@@ -35,6 +44,7 @@ export default function SaasAdminPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [payments, setPayments] = useState<AdminPayment[]>([])
   const [search, setSearch] = useState('')
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
 
@@ -47,6 +57,10 @@ export default function SaasAdminPage() {
       const { data: usersData, error: usersError } = await supabase.rpc('get_admin_users')
       if (usersError) throw usersError
       setUsers(usersData || [])
+
+      const { data: paymentsData, error: paymentsError } = await supabase.rpc('get_recent_payments')
+      if (paymentsError) throw paymentsError
+      setPayments(paymentsData || [])
     } catch (err) {
       console.error('Erreur lors du chargement des données admin:', err)
     }
@@ -388,6 +402,64 @@ export default function SaasAdminPage() {
         ) : (
           <div className="p-16 text-center text-gray-500 text-sm">
             Aucun utilisateur trouvé.
+          </div>
+        )}
+      </div>
+
+      {/* Recent Payments Panel */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900">Dernières Transactions (Paiements & Annulations)</h3>
+        </div>
+
+        {payments.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-xs uppercase tracking-wider text-gray-500 border-b border-gray-200 bg-gray-50 font-bold">
+                  <th className="px-6 py-4">Utilisateur</th>
+                  <th className="px-6 py-4">Montant</th>
+                  <th className="px-6 py-4">Plan</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                      {payment.email}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                      {payment.amount} FCFA
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 uppercase">
+                        {payment.plan}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(payment.created_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                      })}
+                    </td>
+                    <td className="px-6 py-4">
+                      {payment.status === 'success' ? (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600">Succès</span>
+                      ) : (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600">
+                          {payment.status === 'cancelled' ? 'Annulé' : 'Échoué'}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-16 text-center text-gray-500 text-sm">
+            Aucune transaction récente trouvée.
           </div>
         )}
       </div>

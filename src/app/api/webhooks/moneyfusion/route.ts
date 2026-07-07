@@ -14,12 +14,6 @@ export async function POST(request: Request) {
     // Tolérance pour les différents formats de statut selon l'agrégateur
     const isSuccess = ['success', 'completed', 'paid', 'approved'].includes(String(status).toLowerCase())
 
-    if (!isSuccess) {
-      console.warn(`Paiement ignoré (statut actuel: ${status})`)
-      return NextResponse.json({ received: true, status: "ignored" })
-    }
-
-    // Récupération des métadonnées injectées lors de la création du lien (dans route.ts)
     const metadata = payload.metadata || payload.custom_data || payload.customer?.metadata
     if (!metadata || !metadata.user_id || !metadata.plan) {
       console.error("Métadonnées manquantes dans le payload du Webhook")
@@ -31,13 +25,19 @@ export async function POST(request: Request) {
     // Initialisation du client administrateur (contourne la sécurité RLS)
     const supabaseAdmin = createAdminClient()
 
-    // Enregistrement du paiement pour les statistiques
+    // Enregistrement du paiement pour les statistiques (même si échoué ou annulé)
     if (price) {
       await supabaseAdmin.from('payments').insert({
         user_id: user_id,
         amount: Number(price),
-        plan: plan
+        plan: plan,
+        status: isSuccess ? 'success' : (status || 'failed')
       })
+    }
+
+    if (!isSuccess) {
+      console.warn(`Paiement ignoré ou annulé (statut actuel: ${status})`)
+      return NextResponse.json({ received: true, status: "ignored_or_failed" })
     }
 
     // Appel de la procédure RPC stockée dans votre Supabase pour mettre à jour l'abonnement
