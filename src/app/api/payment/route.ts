@@ -24,9 +24,10 @@ export async function POST(request: Request) {
       numeroSend: "00000000", // Numéro par défaut si non fourni par le client
       nomclient: userEmail,
       personal_Info: [
-        { userId: userId, plan: plan }
+        { userId: userId, plan: plan, price: price }
       ],
       return_url: "https://www.devifacture.com/paiement/succes",
+      cancel_url: "https://www.devifacture.com/paiement/erreur",
       webhook_url: "https://www.devifacture.com/api/webhooks/moneyfusion"
     }
 

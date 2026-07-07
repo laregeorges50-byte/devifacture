@@ -78,9 +78,7 @@ export function GuidedTour() {
     <Joyride
       steps={steps}
       run={run}
-      continuous={true}
-      showSkipButton={true}
-      showProgress={true}
+      {...({ continuous: true, showSkipButton: true, showProgress: true } as any)}
       callback={handleJoyrideCallback}
       locale={{
         back: 'Précédent',

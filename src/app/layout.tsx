@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
+import { VisitTracker } from "@/components/VisitTracker";
 
 export const metadata: Metadata = {
   title: "DeviFacture | Facturation pour entrepreneurs africains",
@@ -16,6 +18,7 @@ export default function RootLayout({
     <html lang="fr" className="font-sans h-full antialiased">
       <body className="min-h-full flex flex-col bg-neutral-50">
         {children}
+        <VisitTracker />
         <Analytics />
       </body>
     </html>

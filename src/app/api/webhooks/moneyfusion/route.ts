@@ -26,10 +26,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing metadata" }, { status: 400 })
     }
 
-    const { user_id, plan } = metadata
+    const { user_id, plan, price } = metadata
 
     // Initialisation du client administrateur (contourne la sécurité RLS)
     const supabaseAdmin = createAdminClient()
+
+    // Enregistrement du paiement pour les statistiques
+    if (price) {
+      await supabaseAdmin.from('payments').insert({
+        user_id: user_id,
+        amount: Number(price),
+        plan: plan
+      })
+    }
 
     // Appel de la procédure RPC stockée dans votre Supabase pour mettre à jour l'abonnement
     const { error } = await supabaseAdmin.rpc('update_user_plan', {
