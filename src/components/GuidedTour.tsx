@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import { Joyride, STATUS } from 'react-joyride'
 
-export function GuidedTour() {
+export function GuidedTour({ userId }: { userId?: string }) {
   const [run, setRun] = useState(false)
 
   useEffect(() => {
     // Vérifie si l'utilisateur a déjà vu le tutoriel
-    const hasSeenTour = localStorage.getItem('devifacture_tour_completed')
+    const storageKey = userId ? `devifacture_tour_completed_${userId}` : 'devifacture_tour_completed'
+    const hasSeenTour = localStorage.getItem(storageKey)
     if (!hasSeenTour) {
       // Démarre le tour avec un petit délai pour s'assurer que le DOM est chargé
       const timer = setTimeout(() => {
@@ -69,7 +70,8 @@ export function GuidedTour() {
     if (finishedStatuses.includes(status)) {
       setRun(false)
       // Enregistre que l'utilisateur a fini le tutoriel
-      localStorage.setItem('devifacture_tour_completed', 'true')
+      const storageKey = userId ? `devifacture_tour_completed_${userId}` : 'devifacture_tour_completed'
+      localStorage.setItem(storageKey, 'true')
     }
   }
 

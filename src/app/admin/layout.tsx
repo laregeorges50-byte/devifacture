@@ -64,7 +64,7 @@ export default async function AdminLayout({
           </Link>
         </header>
         
-        <GuidedTour />
+        <GuidedTour userId={user.id} />
 
         <div className="flex-1 p-6 md:p-8 print:p-0">
           {children}
