@@ -61,7 +61,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <header className="absolute top-0 left-0 right-0 z-50 bg-transparent py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-3 w-48">
+          <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-md">
               <div className="w-4 h-4 rounded-sm bg-white"></div>
             </div>
@@ -69,14 +69,14 @@ export default function LandingPage() {
           </div>
 
           {/* Desktop Nav - Parfaitement centré et espacé */}
-          <nav className="hidden md:flex flex-1 justify-center items-center gap-12">
+          <nav className="hidden lg:flex flex-none justify-center items-center gap-6 xl:gap-10">
             <a href="#features" className="text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Fonctionnalités</a>
             <a href="#comparison" className="text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Pourquoi nous ?</a>
             <a href="#how-it-works" className="text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Comment ça marche</a>
             <a href="#pricing" className="text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Tarifs</a>
           </nav>
 
-          <div className="hidden md:flex items-center justify-end gap-6 w-48">
+          <div className="hidden md:flex flex-1 items-center justify-end gap-4">
             {isLoggedIn ? (
               <Link href="/admin" className="bg-gray-900 text-white hover:bg-gray-800 transition-all px-6 py-2.5 rounded-xl text-base font-medium shadow-sm hover:shadow-md">
                 Mon Espace
