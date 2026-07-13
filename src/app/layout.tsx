@@ -5,8 +5,8 @@ import { Analytics } from "@vercel/analytics/react";
 import { VisitTracker } from "@/components/VisitTracker";
 
 export const metadata: Metadata = {
-  title: "DeviFacture | Facturation pour entrepreneurs africains",
-  description: "DeviFacture est le SaaS simple et moderne pour les entrepreneurs africains. Créez des documents professionnels en quelques clics et suivez vos devis et factures sans prise de tête.",
+  title: "DeviFacture | Créez vos devis et factures en quelques clics",
+  description: "Découvrez DeviFacture, l'outil simple, rapide et intuitif pour concevoir vos devis et factures professionnels. Suivez votre activité et gérez vos clients en toute simplicité.",
 };
 
 export default function RootLayout({
