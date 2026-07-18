@@ -3,10 +3,21 @@
 import React, { useState, useEffect } from 'react'
 import Joyride from 'react-joyride'
 
-export function GuidedTour({ userId }: { userId?: string }) {
+export function GuidedTour({ userId, createdAt }: { userId?: string, createdAt?: string }) {
   const [run, setRun] = useState(false)
 
   useEffect(() => {
+    // Si l'utilisateur a créé son compte il y a plus de 24h, on ne montre JAMAIS le tutoriel
+    if (createdAt) {
+      const createdDate = new Date(createdAt).getTime()
+      const now = new Date().getTime()
+      const hoursSinceCreation = (now - createdDate) / (1000 * 60 * 60)
+      
+      if (hoursSinceCreation > 24) {
+        return // Ne rien faire, le composant restera inactif
+      }
+    }
+
     // Vérifie si l'utilisateur a déjà vu le tutoriel
     const storageKey = userId ? `devifacture_tour_completed_${userId}` : 'devifacture_tour_completed'
     const hasSeenTour = localStorage.getItem(storageKey)
@@ -21,7 +32,7 @@ export function GuidedTour({ userId }: { userId?: string }) {
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [userId])
+  }, [userId, createdAt])
 
   const steps: any[] = [
     {
