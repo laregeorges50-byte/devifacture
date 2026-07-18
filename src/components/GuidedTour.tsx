@@ -14,6 +14,10 @@ export function GuidedTour({ userId }: { userId?: string }) {
       // Démarre le tour avec un petit délai pour s'assurer que le DOM est chargé
       const timer = setTimeout(() => {
         setRun(true)
+        // On enregistre IMMÉDIATEMENT qu'il a vu le tutoriel
+        // Comme ça, même s'il rafraîchit la page au milieu du tutoriel,
+        // il ne sera plus jamais embêté !
+        localStorage.setItem(storageKey, 'true')
       }, 1000)
       return () => clearTimeout(timer)
     }
