@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +30,20 @@ export async function POST(request: Request) {
       return_url: "https://www.devifacture.com/paiement/succes",
       cancel_url: "https://www.devifacture.com/paiement/erreur",
       webhook_url: "https://www.devifacture.com/api/webhooks/moneyfusion"
+    }
+
+    // Enregistrement IMMÉDIAT du paiement en statut "pending" (en attente)
+    // Cela permet de voir les tentatives de paiement qui ont été abandonnées par l'utilisateur
+    try {
+      const supabaseAdmin = createAdminClient()
+      await supabaseAdmin.from('payments').insert({
+        user_id: userId,
+        amount: Number(price),
+        plan: plan,
+        status: 'pending' // En attente
+      })
+    } catch (e) {
+      console.error("Erreur lors de l'enregistrement du statut pending:", e)
     }
 
     // 3. Appel à l'API Money Fusion
