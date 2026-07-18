@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Joyride, STATUS } from 'react-joyride'
+import Joyride from 'react-joyride'
 
 export function GuidedTour({ userId }: { userId?: string }) {
   const [run, setRun] = useState(false)
@@ -17,7 +17,7 @@ export function GuidedTour({ userId }: { userId?: string }) {
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [])
+  }, [userId])
 
   const steps: any[] = [
     {
@@ -64,10 +64,15 @@ export function GuidedTour({ userId }: { userId?: string }) {
   ]
 
   const handleJoyrideCallback = (data: any) => {
-    const { status } = data
-    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED]
+    const { status, action, type } = data
 
-    if (finishedStatuses.includes(status)) {
+    if (
+      status === 'finished' || 
+      status === 'skipped' || 
+      action === 'close' || 
+      action === 'skip' ||
+      type === 'tour:end'
+    ) {
       setRun(false)
       // Enregistre que l'utilisateur a fini le tutoriel
       const storageKey = userId ? `devifacture_tour_completed_${userId}` : 'devifacture_tour_completed'
