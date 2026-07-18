@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Joyride from 'react-joyride'
+import { Joyride } from 'react-joyride'
 
 export function GuidedTour({ userId, createdAt }: { userId?: string, createdAt?: string }) {
   const [run, setRun] = useState(false)
