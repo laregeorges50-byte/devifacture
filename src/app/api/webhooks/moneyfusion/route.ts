@@ -14,13 +14,18 @@ export async function POST(request: Request) {
     // Tolérance pour les différents formats de statut selon l'agrégateur
     const isSuccess = ['success', 'completed', 'paid', 'approved'].includes(String(status).toLowerCase())
 
-    const metadata = payload.metadata || payload.custom_data || payload.customer?.metadata
-    if (!metadata || !metadata.user_id || !metadata.plan) {
-      console.error("Métadonnées manquantes dans le payload du Webhook")
+    // Extraction des métadonnées (MoneyFusion peut utiliser custom_data, metadata ou personal_Info)
+    const rawMetadata = payload.metadata || payload.custom_data || payload.customer?.metadata || payload.personal_Info
+    const metadata = Array.isArray(rawMetadata) ? rawMetadata[0] : rawMetadata
+
+    const userId = metadata?.user_id || metadata?.userId
+    const plan = metadata?.plan
+    const price = metadata?.price || metadata?.amount
+
+    if (!userId || !plan) {
+      console.error("Métadonnées manquantes dans le payload du Webhook :", JSON.stringify(metadata || {}))
       return NextResponse.json({ error: "Missing metadata" }, { status: 400 })
     }
-
-    const { user_id, plan, price } = metadata
 
     // Initialisation du client administrateur (contourne la sécurité RLS)
     const supabaseAdmin = createAdminClient()
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
     // Enregistrement du paiement pour les statistiques (même si échoué ou annulé)
     if (price) {
       await supabaseAdmin.from('payments').insert({
-        user_id: user_id,
+        user_id: userId,
         amount: Number(price),
         plan: plan,
         status: isSuccess ? 'success' : (status || 'failed')
@@ -42,7 +47,7 @@ export async function POST(request: Request) {
 
     // Appel de la procédure RPC stockée dans votre Supabase pour mettre à jour l'abonnement
     const { error } = await supabaseAdmin.rpc('update_user_plan', {
-      user_id: user_id,
+      user_id: userId,
       new_plan: plan
     })
 
