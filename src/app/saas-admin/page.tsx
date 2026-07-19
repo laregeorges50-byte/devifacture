@@ -457,9 +457,11 @@ export default function SaasAdminPage() {
 
                         {payment.status !== 'success' && (
                           <a 
-                            href={`mailto:${payment.email}?subject=Problème avec votre abonnement DeviFacture ${payment.plan}&body=Bonjour,%0D%0A%0D%0AJ'ai remarqué que vous avez essayé de souscrire au plan ${payment.plan} mais que le paiement n'a pas abouti.%0D%0A%0D%0AAvez-vous rencontré un problème technique ou avez-vous des questions ? Je suis là pour vous aider !%0D%0A%0D%0ACordialement,%0D%0AL'équipe DeviFacture`}
+                            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(payment.email)}&su=${encodeURIComponent(`Problème avec votre abonnement DeviFacture ${payment.plan}`)}&body=${encodeURIComponent(`Bonjour,\n\nJ'ai remarqué que vous avez essayé de souscrire au plan ${payment.plan} mais que le paiement n'a pas abouti.\n\nAvez-vous rencontré un problème technique ou avez-vous des questions ? Je suis là pour vous aider !\n\nCordialement,\nL'équipe DeviFacture`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors"
-                            title="Relancer par email"
+                            title="Relancer via Gmail"
                           >
                             Relancer
                           </a>
