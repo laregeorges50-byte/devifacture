@@ -444,13 +444,27 @@ export default function SaasAdminPage() {
                       })}
                     </td>
                     <td className="px-6 py-4">
-                      {payment.status === 'success' ? (
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600">Succès</span>
-                      ) : (
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600">
-                          {payment.status === 'cancelled' ? 'Annulé' : 'Échoué'}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {payment.status === 'success' ? (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600">Succès</span>
+                        ) : payment.status === 'pending' ? (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600">En attente</span>
+                        ) : (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600">
+                            {payment.status === 'cancelled' ? 'Annulé' : 'Échoué'}
+                          </span>
+                        )}
+
+                        {payment.status !== 'success' && (
+                          <a 
+                            href={`mailto:${payment.email}?subject=Problème avec votre abonnement DeviFacture ${payment.plan}&body=Bonjour,%0D%0A%0D%0AJ'ai remarqué que vous avez essayé de souscrire au plan ${payment.plan} mais que le paiement n'a pas abouti.%0D%0A%0D%0AAvez-vous rencontré un problème technique ou avez-vous des questions ? Je suis là pour vous aider !%0D%0A%0D%0ACordialement,%0D%0AL'équipe DeviFacture`}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors"
+                            title="Relancer par email"
+                          >
+                            Relancer
+                          </a>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
